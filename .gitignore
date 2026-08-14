@@ -1,0 +1,25 @@
+# dependencies
+node_modules/
+
+# builds
+dist/
+*.tsbuildinfo
+
+# environment
+.env
+.env.local
+.env.*.local
+
+# terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+.terraform.lock.hcl
+
+# editors / os
+.DS_Store
+.idea/
+.vscode/
+*.log

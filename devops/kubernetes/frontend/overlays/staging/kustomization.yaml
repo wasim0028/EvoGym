@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: evogym
+
+resources:
+  - ../../base
+  - hpa.yaml
+
+images:
+  - name: evogym-frontend
+    newName: 123456789012.dkr.ecr.ap-south-1.amazonaws.com/evogym-frontend
+    newTag: staging-latest
+
+replicas:
+  - name: evogym-frontend
+    count: 2
+
+labels:
+  - includeSelectors: false
+    pairs:
+      app.kubernetes.io/instance: evogym-staging

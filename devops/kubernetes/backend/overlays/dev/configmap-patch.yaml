@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: evogym-backend-config
+data:
+  NODE_ENV: "development"
+  CLIENT_URL: "https://dev.evogym.example.com"

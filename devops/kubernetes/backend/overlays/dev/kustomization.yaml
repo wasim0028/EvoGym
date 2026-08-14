@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: evogym
+nameSuffix: ""
+
+resources:
+  - ../../base
+
+
+# CI updates the tag below via:
+#   kustomize edit set image evogym-backend=<ecr-url>:dev-<sha>
+images:
+  - name: evogym-backend
+    newName: 123456789012.dkr.ecr.ap-south-1.amazonaws.com/evogym-backend
+    newTag: dev-latest
+
+replicas:
+  - name: evogym-backend
+    count: 1
+
+patches:
+  - path: configmap-patch.yaml
+
+labels:
+  - includeSelectors: false
+    pairs:
+      app.kubernetes.io/instance: evogym-dev

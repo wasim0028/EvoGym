@@ -1,0 +1,109 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  MEMBER
+  ADMIN
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum EnquiryStatus {
+  NEW
+  CONTACTED
+  CLOSED
+}
+
+enum PaymentStatus {
+  CREATED
+  PAID
+  FAILED
+}
+
+model User {
+  id            String         @id @default(uuid())
+  name          String
+  email         String         @unique
+  password      String
+  phone         String?
+  role          Role           @default(MEMBER)
+  refreshToken  String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  subscriptions Subscription[]
+  payments      Payment[]
+}
+
+model MembershipPlan {
+  id            String         @id @default(uuid())
+  // Unique so re-running the seed updates the existing row instead of
+  // inserting a second "Monthly" plan.
+  name          String         @unique
+  description   String?
+  price         Int            // amount in paise (e.g. 99900 = ₹999.00)
+  durationDays  Int
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  subscriptions Subscription[]
+  payments      Payment[]
+}
+
+model Subscription {
+  id        String             @id @default(uuid())
+  userId    String
+  user      User               @relation(fields: [userId], references: [id])
+  planId    String
+  plan      MembershipPlan     @relation(fields: [planId], references: [id])
+  startDate DateTime           @default(now())
+  endDate   DateTime
+  status    SubscriptionStatus @default(ACTIVE)
+  createdAt DateTime           @default(now())
+
+  payments  Payment[]
+}
+
+model Payment {
+  id                String         @id @default(uuid())
+  userId            String
+  user              User           @relation(fields: [userId], references: [id])
+  planId            String
+  plan              MembershipPlan @relation(fields: [planId], references: [id])
+  subscriptionId    String?
+  subscription      Subscription?  @relation(fields: [subscriptionId], references: [id])
+
+  razorpayOrderId   String         @unique
+  razorpayPaymentId String?
+  razorpaySignature String?
+  amount            Int
+  currency          String         @default("INR")
+  status            PaymentStatus  @default(CREATED)
+
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+}
+
+model ContactEnquiry {
+  id        String         @id @default(uuid())
+  name      String
+  email     String
+  phone     String?
+  message   String?
+  status    EnquiryStatus  @default(NEW)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@index([status, createdAt])
+}

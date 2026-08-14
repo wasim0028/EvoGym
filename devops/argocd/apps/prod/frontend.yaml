@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: evogym-frontend-prod
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/wasim0028/gym-typescript.git
+    targetRevision: main
+    path: devops/kubernetes/frontend/overlays/prod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: evogym
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+  revisionHistoryLimit: 10

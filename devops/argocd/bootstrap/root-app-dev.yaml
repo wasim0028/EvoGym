@@ -1,0 +1,26 @@
+# Apply ONCE per cluster after Terraform finishes:
+#   kubectl apply -f devops/argocd/bootstrap/root-app-dev.yaml
+# From then on, everything under devops/argocd/apps/dev/ is managed by
+# Argo CD itself — adding a new app is just committing a new file there.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: evogym-root-dev
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/wasim0028/gym-typescript.git
+    targetRevision: develop
+    path: devops/argocd/apps/dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

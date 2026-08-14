@@ -1,0 +1,123 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-void font-sans text-ash-200 antialiased;
+  }
+
+  ::selection {
+    @apply bg-lime text-void;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-lime ring-offset-2 ring-offset-void;
+  }
+}
+
+@layer components {
+  .shell {
+    @apply mx-auto w-full max-w-[1200px] px-5 sm:px-8;
+  }
+
+  /* Headline scale — heavy, tight, and set in two tones (white line +
+     lime line), which is the core rhythm of this layout. */
+  .h-display {
+    @apply text-[clamp(2.5rem,6.2vw,4.75rem)] font-extrabold leading-[1.02] tracking-tightest text-bone;
+  }
+
+  .h-section {
+    @apply text-[clamp(1.9rem,4vw,3.25rem)] font-extrabold leading-[1.08] tracking-tightest text-bone;
+  }
+
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.2em] text-lime;
+  }
+
+  .lede {
+    @apply text-base leading-relaxed text-ash-400;
+  }
+
+  /* The signature shape: a corner cut out of the card, with a lime triangle
+     showing through the gap. */
+  .notch {
+    clip-path: polygon(
+      0 0,
+      calc(100% - 2.4rem) 0,
+      100% 2.4rem,
+      100% 100%,
+      0 100%
+    );
+  }
+
+  .notch-flag {
+    clip-path: polygon(0 0, 100% 0, 100% 100%);
+  }
+
+  .card {
+    @apply rounded-[1.75rem] border border-line bg-ink-800;
+  }
+
+  /* Photography is desaturated so the lime is the only saturated thing on
+     the page; colour returns on hover. */
+  /* Equipment illustrations read their accent from here, so a card can
+     brighten them on hover without touching the SVG markup. */
+  .art {
+    --art-accent: #C9F73E;
+    @apply text-ash-500 transition-colors duration-300;
+  }
+  .group:hover .art {
+    @apply text-ash-200;
+  }
+
+  .duotone {
+    @apply grayscale contrast-[1.15] brightness-95 transition duration-500;
+  }
+  .group:hover .duotone {
+    @apply grayscale-0 brightness-100;
+  }
+
+  /* Fades the bottom of a rectangular photo into the page, so a framed
+     shot reads like a cutout. */
+  .fade-base {
+    -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent 99%);
+    mask-image: linear-gradient(to bottom, #000 62%, transparent 99%);
+  }
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition:
+    opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}

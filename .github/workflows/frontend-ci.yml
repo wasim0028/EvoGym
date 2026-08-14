@@ -1,0 +1,121 @@
+name: Frontend CI/CD
+
+on:
+  push:
+    branches: [develop, staging, main]
+    paths:
+      - "frontend/**"
+      - "devops/docker/frontend/**"
+      - ".github/workflows/frontend-ci.yml"
+  pull_request:
+    branches: [develop, staging, main]
+    paths:
+      - "frontend/**"
+  workflow_dispatch:
+
+concurrency:
+  group: frontend-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  AWS_REGION: ap-south-1
+  ECR_REPOSITORY: evogym-frontend
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.map.outputs.environment }}
+    steps:
+      - id: map
+        run: |
+          case "${GITHUB_REF_NAME}" in
+            develop) echo "environment=dev"     >> "$GITHUB_OUTPUT" ;;
+            staging) echo "environment=staging" >> "$GITHUB_OUTPUT" ;;
+            main)    echo "environment=prod"    >> "$GITHUB_OUTPUT" ;;
+            *)       echo "environment=dev"     >> "$GITHUB_OUTPUT" ;;
+          esac
+
+  build-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Build
+        run: npm run build
+
+  push-image:
+    if: github.event_name != 'pull_request'
+    needs: [setup, build-and-test]
+    runs-on: ubuntu-latest
+    environment: ${{ needs.setup.outputs.environment }}
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/evogym-${{ needs.setup.outputs.environment }}-app-deployer
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push image
+        id: image
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          ENVIRONMENT: ${{ needs.setup.outputs.environment }}
+          # Frontend and backend sit behind the SAME ALB (/api routes to the
+          # backend), so a relative URL works in every environment. Override
+          # with a repo/environment variable only if you split the domains.
+          VITE_API_URL: ${{ vars.VITE_API_URL || '/api' }}
+        run: |
+          TAG="${ENVIRONMENT}-${GITHUB_SHA::7}"
+          IMAGE="${REGISTRY}/${ECR_REPOSITORY}:${TAG}"
+          docker build \
+            -f devops/docker/frontend/Dockerfile \
+            --build-arg "VITE_API_URL=${VITE_API_URL}" \
+            -t "$IMAGE" .
+          docker push "$IMAGE"
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+
+      - name: Update the Kustomize overlay with the new tag
+        env:
+          ENVIRONMENT: ${{ needs.setup.outputs.environment }}
+          IMAGE: ${{ steps.image.outputs.image }}
+        run: |
+          curl -sSL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.4.2/kustomize_v5.4.2_linux_amd64.tar.gz" | tar xz
+          cd "devops/kubernetes/frontend/overlays/${ENVIRONMENT}"
+          "${GITHUB_WORKSPACE}/kustomize" edit set image "evogym-frontend=${IMAGE}"
+
+      - name: Commit the tag bump so Argo CD picks it up
+        env:
+          ENVIRONMENT: ${{ needs.setup.outputs.environment }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add devops/kubernetes/frontend/overlays/
+          if git diff --staged --quiet; then
+            echo "Image tag unchanged, nothing to commit."
+            exit 0
+          fi
+          git commit -m "chore(${ENVIRONMENT}): bump frontend image to ${GITHUB_SHA::7} [skip ci]"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

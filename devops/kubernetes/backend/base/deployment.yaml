@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: evogym-backend
+  labels:
+    app.kubernetes.io/name: evogym-backend
+    app.kubernetes.io/part-of: evogym
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: evogym-backend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: evogym-backend
+        app.kubernetes.io/part-of: evogym
+    spec:
+      containers:
+        - name: backend
+          image: evogym-backend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 5000
+          envFrom:
+            - configMapRef:
+                name: evogym-backend-config
+            - secretRef:
+                # Created by Terraform (environments/<env>/main.tf) and holds
+                # DATABASE_URL, JWT secrets and the Razorpay keys.
+                name: evogym-backend-secrets
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            # Fargate rounds these up to the nearest supported task size, so
+            # requests and limits are set equal to keep sizing predictable.
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            capabilities:
+              drop: ["ALL"]

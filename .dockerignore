@@ -1,0 +1,10 @@
+**/node_modules
+**/dist
+**/preview
+.git
+.github
+devops/terraform
+devops/kubernetes
+devops/argocd
+backend
+*.md

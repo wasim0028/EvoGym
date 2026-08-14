@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: evogym-backend
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    # target-type MUST be "ip" on Fargate — there are no EC2 nodes to register
+    # as "instance" targets.
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/backend-protocol: HTTP
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+    # Shares ONE ALB with the frontend Ingress. Lower order = evaluated first,
+    # so /api/* is matched before the frontend's catch-all "/".
+    alb.ingress.kubernetes.io/group.name: evogym
+    alb.ingress.kubernetes.io/group.order: "10"
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: evogym-backend
+                port:
+                  number: 80
