@@ -1,0 +1,14 @@
+{
+  "name": "EvoGym",
+  "short_name": "EvoGym",
+  "description": "Strength training, coached classes and a membership you can track.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A0C07",
+  "theme_color": "#C9F73E",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

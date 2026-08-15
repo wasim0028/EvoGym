@@ -144,6 +144,15 @@ export const api = {
 
     me: () => request<User>("/auth/me", { auth: true }),
 
+    forgotPassword: (email: string) =>
+      request<null>("/auth/forgot-password", {
+        method: "POST",
+        body: { email },
+      }),
+
+    resetPassword: (input: { token: string; password: string }) =>
+      request<null>("/auth/reset-password", { method: "POST", body: input }),
+
     /** Restores a session on page load using the refresh cookie. */
     restore: refreshAccessToken,
   },

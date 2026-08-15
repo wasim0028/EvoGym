@@ -1,6 +1,8 @@
 import { ButtonLink } from "@/components/Button";
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 export default function NotFound() {
+  usePageTitle("Page Not Found");
   return (
     <div className="shell grid min-h-[75vh] place-items-center py-32 text-center">
       <div>

@@ -2,14 +2,33 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0B0E10" />
+
+    <!-- Icons. SVG first for browsers that support it, PNG as the fallback. -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#0A0C07" />
+
+    <!-- Title carries the brand AND what the place is, so it still makes
+         sense as a bookmark or a search result. -->
+    <title>EvoGym — Strength Training &amp; Coached Classes</title>
     <meta
       name="description"
-      content="EvoGym — strength training, coached classes, and a membership you can track. Open 05:00–23:00, seven days a week."
+      content="A strength-first gym: 12 lifting stations, 42 coached sessions a week, and a membership you can track to the day. Open 05:00–23:00, seven days."
     />
-    <title>EvoGym — Add weight</title>
+
+    <!-- Link previews (WhatsApp, Slack, LinkedIn, X). -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="EvoGym" />
+    <meta property="og:title" content="EvoGym — Strength Training &amp; Coached Classes" />
+    <meta
+      property="og:description"
+      content="12 lifting stations, 42 coached sessions a week, and a membership you can track to the day."
+    />
+    <meta property="og:image" content="/icon-512.png" />
+    <meta name="twitter:card" content="summary" />
   </head>
   <body>
     <div id="root"></div>

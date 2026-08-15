@@ -7,6 +7,7 @@ import { AuthShell } from "@/components/AuthShell";
 import { Field } from "@/components/Field";
 import { Button } from "@/components/Button";
 import { Notice } from "@/components/Notice";
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 interface LoginForm {
   email: string;
@@ -14,6 +15,7 @@ interface LoginForm {
 }
 
 export default function Login() {
+  usePageTitle("Sign In");
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -75,6 +77,15 @@ export default function Login() {
           error={errors.password?.message}
           {...register("password", { required: "Enter your password." })}
         />
+
+        <div className="flex justify-end">
+          <Link
+            to="/forgot-password"
+            className="text-xs font-semibold text-ash-400 underline underline-offset-4 transition-colors hover:text-lime"
+          >
+            Forgot your password?
+          </Link>
+        </div>
 
         <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
           {isSubmitting ? "Signing in…" : "Sign in"}

@@ -74,6 +74,30 @@ All responses are shaped as `{ success, message, data }` (or `{ success: false, 
 | POST | `/refresh` | refresh cookie | – |
 | POST | `/logout` | – | – |
 | GET | `/me` | Bearer token | – |
+| POST | `/forgot-password` | – (5/hour per IP) | `email` |
+| POST | `/reset-password` | – (5/hour per IP) | `token, password` |
+
+### Password reset
+
+`POST /auth/forgot-password` creates a single-use token, stores only its
+SHA-256 hash, and emails a link to `CLIENT_URL/reset-password?token=…`. The
+token expires after 30 minutes, and requesting a new one invalidates any
+earlier unused token.
+
+The response is identical whether or not the address is registered — saying
+"no such user" would turn the endpoint into a way to discover which emails
+have accounts.
+
+`POST /auth/reset-password` sets the new password, marks the token used, and
+clears the stored refresh token in one transaction, so any other signed-in
+session is logged out.
+
+**No email provider is wired up yet.** In development the reset link is
+printed to the server console — start the backend, submit the form, and copy
+the link from the terminal. In production `sendPasswordResetEmail` logs a
+loud error instead of silently dropping the message. To go live, replace the
+body of `src/services/mailer.service.ts` with a call to SES, Resend or
+SendGrid; nothing else needs to change.
 
 Register/login return `{ accessToken, user }` and set an httpOnly `refreshToken` cookie scoped to `/api/auth`. Keep the access token in memory on the frontend (e.g. React state/context), not localStorage, and call `/refresh` when it expires (short-lived, default 15m).
 

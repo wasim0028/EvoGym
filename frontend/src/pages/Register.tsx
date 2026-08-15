@@ -7,6 +7,7 @@ import { AuthShell } from "@/components/AuthShell";
 import { Field } from "@/components/Field";
 import { Button } from "@/components/Button";
 import { Notice } from "@/components/Notice";
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 interface RegisterForm {
   name: string;
@@ -16,6 +17,7 @@ interface RegisterForm {
 }
 
 export default function Register() {
+  usePageTitle("Create an Account");
   const { register: createAccount } = useAuth();
   const navigate = useNavigate();
   const [formError, setFormError] = useState<string | null>(null);

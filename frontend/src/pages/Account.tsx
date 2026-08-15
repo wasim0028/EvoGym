@@ -7,6 +7,7 @@ import { NotchCard } from "@/components/NotchCard";
 import { ButtonLink } from "@/components/Button";
 import { Notice } from "@/components/Notice";
 import type { Payment, Subscription } from "@/shared/types";
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 const STATUS_TONE: Record<string, string> = {
   PAID: "text-lime",
@@ -15,6 +16,7 @@ const STATUS_TONE: Record<string, string> = {
 };
 
 export default function Account() {
+  usePageTitle("Your Account");
   const { user } = useAuth();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);

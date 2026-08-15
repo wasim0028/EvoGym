@@ -43,6 +43,7 @@ model User {
 
   subscriptions Subscription[]
   payments      Payment[]
+  resetTokens   PasswordResetToken[]
 }
 
 model MembershipPlan {
@@ -106,4 +107,18 @@ model ContactEnquiry {
   updatedAt DateTime       @updatedAt
 
   @@index([status, createdAt])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Only the SHA-256 hash is stored. If the database leaks, the raw tokens
+  // in it are useless — same reasoning as hashing passwords.
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }

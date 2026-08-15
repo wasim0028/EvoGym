@@ -6,6 +6,7 @@ import {
 } from "@heroicons/react/24/solid";
 import { NotchCard } from "@/components/NotchCard";
 import { ContactForm } from "@/components/ContactForm";
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 const details = [
   { icon: EnvelopeIcon, label: "Email", value: "hello@evogym.example" },
@@ -15,6 +16,7 @@ const details = [
 ];
 
 export default function Contact() {
+  usePageTitle("Contact Us");
   return (
     <div className="pt-32 sm:pt-40">
       <div className="shell pb-20 sm:pb-28">

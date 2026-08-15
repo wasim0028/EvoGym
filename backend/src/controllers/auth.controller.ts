@@ -1,11 +1,13 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { prisma } from '../config/prisma';
 import { asyncHandler } from '../utils/asyncHandler';
 import { ApiError } from '../utils/ApiError';
 import { ApiResponse } from '../utils/ApiResponse';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/jwt';
 import { env } from '../config/env';
+import { sendPasswordResetEmail } from '../services/mailer.service';
 
 const REFRESH_COOKIE_OPTIONS = {
   httpOnly: true,
@@ -121,4 +123,81 @@ export const me = asyncHandler(async (req: Request, res: Response) => {
   });
   if (!user) throw new ApiError(404, 'User not found');
   res.status(200).json(new ApiResponse('User fetched', user));
+});
+
+/* ------------------------------------------------------------------ *
+ * Password reset                                                     *
+ * ------------------------------------------------------------------ */
+
+const RESET_TOKEN_TTL_MINUTES = 30;
+
+const hashToken = (token: string) =>
+  crypto.createHash('sha256').update(token).digest('hex');
+
+export const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
+  const { email } = req.body;
+
+  const user = await prisma.user.findUnique({ where: { email } });
+
+  // The response is identical whether or not the account exists. Saying
+  // "no such user" would turn this endpoint into a way to discover which
+  // email addresses are registered.
+  if (user) {
+    // Any earlier unused tokens are dropped, so a reset link can't be
+    // resurrected after the user requests a new one.
+    await prisma.passwordResetToken.deleteMany({
+      where: { userId: user.id, usedAt: null },
+    });
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+
+    await prisma.passwordResetToken.create({
+      data: {
+        userId: user.id,
+        tokenHash: hashToken(rawToken),
+        expiresAt: new Date(Date.now() + RESET_TOKEN_TTL_MINUTES * 60 * 1000),
+      },
+    });
+
+    const resetUrl = `${env.CLIENT_URL}/reset-password?token=${rawToken}`;
+    await sendPasswordResetEmail(user.email, resetUrl);
+  }
+
+  res.status(200).json(
+    new ApiResponse(
+      'If that email is registered, a reset link is on its way. It expires in 30 minutes.',
+    ),
+  );
+});
+
+export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
+  const { token, password } = req.body;
+
+  const record = await prisma.passwordResetToken.findUnique({
+    where: { tokenHash: hashToken(token) },
+  });
+
+  if (!record || record.usedAt || record.expiresAt < new Date()) {
+    throw new ApiError(400, 'That reset link is invalid or has expired. Request a new one.');
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 12);
+
+  // One transaction: set the new password, mark the token used, and clear the
+  // stored refresh token so any other signed-in session is logged out.
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: record.userId },
+      data: { password: hashedPassword, refreshToken: null },
+    }),
+    prisma.passwordResetToken.update({
+      where: { id: record.id },
+      data: { usedAt: new Date() },
+    }),
+  ]);
+
+  res.clearCookie('refreshToken', { path: '/api/auth' });
+  res.status(200).json(
+    new ApiResponse('Password updated. You can sign in with your new password now.'),
+  );
 });

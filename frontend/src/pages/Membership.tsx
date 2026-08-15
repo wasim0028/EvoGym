@@ -9,6 +9,7 @@ import { Button } from "@/components/Button";
 import { Notice } from "@/components/Notice";
 import { DEMO_PLANS, isStaticPreview } from "@/lib/demoPlans";
 import type { MembershipPlan, Subscription } from "@/shared/types";
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 const perks = [
   "Every programme included",
@@ -18,6 +19,7 @@ const perks = [
 ];
 
 export default function Membership() {
+  usePageTitle("Membership Plans");
   const { user } = useAuth();
   const navigate = useNavigate();
 
